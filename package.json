@@ -1,0 +1,65 @@
+{
+  "name": "graphiql-desktop",
+  "version": "1.0.0",
+  "description": "A modern desktop wrapper for GraphiQL",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build && electron-builder",
+    "preview": "vite preview",
+    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:build": "vite build && electron-builder --mac --arm64"
+  },
+  "keywords": [
+    "graphql",
+    "graphiql",
+    "electron",
+    "desktop"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^8.2.2",
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.10",
+    "vite-plugin-electron": "^0.28.0",
+    "vite-plugin-electron-renderer": "^0.14.5",
+    "wait-on": "^7.2.0"
+  },
+  "dependencies": {
+    "@graphiql/plugin-explorer": "^3.0.1",
+    "@graphiql/toolkit": "^0.9.1",
+    "graphiql": "^3.0.10",
+    "graphql": "^16.8.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "uuid": "^9.0.1",
+    "zustand": "^4.4.7"
+  },
+  "build": {
+    "appId": "com.graphiql.desktop",
+    "productName": "GraphiQL Desktop",
+    "mac": {
+      "target": {
+        "target": "dmg",
+        "arch": [
+          "arm64"
+        ]
+      },
+      "category": "public.app-category.developer-tools"
+    },
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ]
+  }
+}
