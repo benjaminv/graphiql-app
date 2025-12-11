@@ -21,7 +21,11 @@ Your queries, headers, and API tokens are stored locally in your browser's local
 
 Download the latest release from [GitHub Releases](https://github.com/benjaminv/graphiql-app/releases).
 
-> **Note**: The app is unsigned. On first launch: Right-click → Open → Open
+> **Note**: The app is unsigned. To open on macOS 15+ (Sequoia):
+> ```bash
+> xattr -dr com.apple.quarantine /Applications/GraphiQL\ Desktop.app
+> ```
+> For older macOS versions: Right-click → Open → Open
 
 ## 🛠 Development
 
