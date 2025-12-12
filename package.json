@@ -1,6 +1,6 @@
 {
   "name": "graphiql-desktop",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A modern desktop wrapper for GraphiQL",
   "main": "dist-electron/main.js",
   "scripts": {
@@ -52,6 +52,7 @@
           "arm64"
         ]
       },
+      "icon": "build/icon.icns",
       "category": "public.app-category.developer-tools"
     },
     "directories": {
