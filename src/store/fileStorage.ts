@@ -10,7 +10,11 @@ function createFileBackedStorage(name: string) {
     return {
         getItem(key: string): string | null {
             const cached = localStorage.getItem(key)
-            if (cached) return cached
+            if (cached) {
+                // Ensure localStorage data is also persisted to the file
+                window.electronAPI?.store.save(name, cached)
+                return cached
+            }
 
             const fromFile = window.electronAPI?.store.load(name)
             if (fromFile) {
