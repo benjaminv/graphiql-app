@@ -2,7 +2,7 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
-    background: #0f0f1a;
+    background: var(--app-bg-primary);
 }
 
 /* No longer needed - tabs now align with traffic lights */
@@ -17,12 +17,6 @@
     -webkit-app-region: no-drag;
 }
 
-/* GraphiQL theme overrides for dark mode */
-.graphiql-container .graphiql-container {
-    --color-base: #0f0f1a;
-    --color-primary: #ff6b35;
-}
-
 /* Ensure all interactive elements inside GraphiQL are not draggable */
 .graphiql-container input,
 .graphiql-container textarea,
@@ -31,14 +25,21 @@
 .graphiql-container .CodeMirror,
 .graphiql-container .cm-editor,
 .graphiql-container .graphiql-editor,
-.graphiql-container .graphiql-explorer-root {
+.graphiql-container .graphiql-explorer-root,
+.graphiql-container .monaco-editor {
     -webkit-app-region: no-drag;
     -webkit-user-select: text;
     user-select: text;
 }
 
-/* Fix for CodeMirror selections */
+/* Fix for editor selections */
 .graphiql-container .CodeMirror-selected,
-.graphiql-container .cm-selectionBackground {
+.graphiql-container .cm-selectionBackground,
+.graphiql-container .monaco-editor .selected-text {
     -webkit-app-region: no-drag;
+}
+
+/* Hide GraphiQL's inner settings button when advanced settings is off */
+.hide-inner-settings .graphiql-sidebar > button[aria-label="Open settings dialog"] {
+    display: none;
 }

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import { v4 as uuidv4 } from 'uuid'
 
 export interface Tab {
@@ -41,11 +41,47 @@ query {
     headers: JSON.stringify({ 'Content-Type': 'application/json' }, null, 2),
 })
 
+// Create the default tab once so the ID is stable during initialization
+const defaultTab = createDefaultTab()
+
+/**
+ * File-backed storage adapter.
+ * Chromium's localStorage in Electron does not reliably persist to disk.
+ * We bypass it by reading/writing a JSON file via IPC to the main process,
+ * with localStorage as an in-session cache for performance.
+ */
+const fileBackedStorage = {
+    getItem(name: string): string | null {
+        // Try localStorage first (fast, works during the session)
+        const cached = localStorage.getItem(name)
+        if (cached) return cached
+
+        // Fall back to file on disk via synchronous IPC
+        const fromFile = window.electronAPI?.loadTabs()
+        if (fromFile) {
+            // Populate localStorage so subsequent reads are fast
+            localStorage.setItem(name, fromFile)
+            return fromFile
+        }
+
+        return null
+    },
+    setItem(name: string, value: string): void {
+        // Always write to localStorage (fast, for in-session reads)
+        localStorage.setItem(name, value)
+        // Also persist to file on disk (debounced in main process)
+        window.electronAPI?.saveTabs(value)
+    },
+    removeItem(name: string): void {
+        localStorage.removeItem(name)
+    },
+}
+
 export const useTabStore = create<TabStore>()(
     persist(
         (set, get) => ({
-            tabs: [createDefaultTab()],
-            activeTabId: null,
+            tabs: [defaultTab],
+            activeTabId: defaultTab.id,
 
             addTab: () => {
                 const newTab = createDefaultTab()
@@ -59,8 +95,8 @@ export const useTabStore = create<TabStore>()(
                 set((state) => {
                     const newTabs = state.tabs.filter((t) => t.id !== id)
                     if (newTabs.length === 0) {
-                        const defaultTab = createDefaultTab()
-                        return { tabs: [defaultTab], activeTabId: defaultTab.id }
+                        const freshTab = createDefaultTab()
+                        return { tabs: [freshTab], activeTabId: freshTab.id }
                     }
                     const newActiveId = state.activeTabId === id
                         ? newTabs[0].id
@@ -135,12 +171,20 @@ export const useTabStore = create<TabStore>()(
         }),
         {
             name: 'graphiql-desktop-tabs',
+            storage: createJSONStorage(() => fileBackedStorage),
+            // After rehydration: ensure activeTabId is valid
+            onRehydrateStorage: () => {
+                return (state?: TabStore) => {
+                    if (state) {
+                        const { tabs, activeTabId } = state
+                        // If activeTabId is missing or doesn't match any tab, fix it
+                        const isValid = activeTabId && tabs.some(t => t.id === activeTabId)
+                        if (!isValid && tabs.length > 0) {
+                            useTabStore.setState({ activeTabId: tabs[0].id })
+                        }
+                    }
+                }
+            },
         }
     )
 )
-
-// Initialize activeTabId if not set
-const state = useTabStore.getState()
-if (!state.activeTabId && state.tabs.length > 0) {
-    useTabStore.setState({ activeTabId: state.tabs[0].id })
-}

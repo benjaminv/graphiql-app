@@ -1,25 +1,27 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { createGraphiQLFetcher } from '@graphiql/toolkit'
 import { GraphiQL } from 'graphiql'
+import { HISTORY_PLUGIN } from '@graphiql/plugin-history'
 import { explorerPlugin } from '@graphiql/plugin-explorer'
+import { useGraphiQL, useGraphiQLActions } from '@graphiql/react'
 import { useTabStore, Tab } from '../store/tabStore'
-import 'graphiql/graphiql.css'
-import '@graphiql/plugin-explorer/dist/style.css'
+import { useSettingsStore } from '../store/settingsStore'
+import 'graphiql/style.css'
+import '@graphiql/plugin-explorer/style.css'
 
 interface GraphiQLWrapperProps {
     tab: Tab
 }
 
+// Storage keys that we lock to specific values (desktop environment = always trusted)
+const LOCKED_STORAGE_KEYS: Record<string, string> = {
+    'shouldPersistHeaders': 'true',
+}
+
 // Create isolated storage for each endpoint tab
-// Also sets default values for GraphiQL settings
+// Also locks certain settings (e.g. shouldPersistHeaders is always ON)
 function createTabStorage(tabId: string): Storage {
     const prefix = `graphiql-tab-${tabId}:`
-
-    // Ensure persist headers is enabled by default
-    const persistHeadersKey = prefix + 'graphiql:shouldPersistHeaders'
-    if (localStorage.getItem(persistHeadersKey) === null) {
-        localStorage.setItem(persistHeadersKey, 'true')
-    }
 
     return {
         get length() {
@@ -30,12 +32,24 @@ function createTabStorage(tabId: string): Storage {
             return keys[index]?.replace(prefix, '') ?? null
         },
         getItem(key: string) {
+            // Return locked value if this key is locked
+            if (key in LOCKED_STORAGE_KEYS) {
+                return LOCKED_STORAGE_KEYS[key]
+            }
             return localStorage.getItem(prefix + key)
         },
         setItem(key: string, value: string) {
+            // Silently ignore writes to locked keys
+            if (key in LOCKED_STORAGE_KEYS) {
+                return
+            }
             localStorage.setItem(prefix + key, value)
         },
         removeItem(key: string) {
+            // Prevent removal of locked keys
+            if (key in LOCKED_STORAGE_KEYS) {
+                return
+            }
             localStorage.removeItem(prefix + key)
         },
         clear() {
@@ -46,11 +60,48 @@ function createTabStorage(tabId: string): Storage {
     }
 }
 
+/**
+ * Invisible component rendered inside <GraphiQL> to sync headers to new inner tabs.
+ * When a new query tab is added, it copies the previous active tab's headers
+ * to the new tab — so every new inner tab inherits the current headers.
+ */
+function HeaderSync() {
+    const tabs = useGraphiQL(state => state.tabs)
+    const activeTabIndex = useGraphiQL(state => state.activeTabIndex)
+    const headerEditor = useGraphiQL(state => state.headerEditor)
+    const { updateActiveTabValues } = useGraphiQLActions()
+
+    const prevStateRef = useRef({ tabCount: tabs.length, activeIndex: activeTabIndex })
+
+    useEffect(() => {
+        const prev = prevStateRef.current
+
+        if (tabs.length > prev.tabCount && headerEditor) {
+            // A new tab was just added — copy headers from previously active tab
+            const prevActiveTab = tabs[prev.activeIndex]
+            if (prevActiveTab?.headers) {
+                // Update both the editor display and the internal state
+                headerEditor.setValue(prevActiveTab.headers)
+                updateActiveTabValues({ headers: prevActiveTab.headers })
+            }
+        }
+
+        prevStateRef.current = { tabCount: tabs.length, activeIndex: activeTabIndex }
+    }, [tabs, activeTabIndex, headerEditor, updateActiveTabValues])
+
+    return null
+}
+
 export function GraphiQLWrapper({ tab }: GraphiQLWrapperProps) {
     const updateTab = useTabStore((state) => state.updateTab)
+    const theme = useSettingsStore((state) => state.theme)
+    const showInnerSettings = useSettingsStore((state) => state.showInnerSettings)
 
     // Create isolated storage for this tab
     const storage = useMemo(() => createTabStorage(tab.id), [tab.id])
+
+    // Map our theme setting to GraphiQL's forcedTheme
+    const forcedTheme = theme === 'system' ? undefined : theme
 
     // Create a stable fetcher that uses the current tab's endpoint and headers
     const fetcher = useMemo(() => {
@@ -100,16 +151,20 @@ export function GraphiQLWrapper({ tab }: GraphiQLWrapperProps) {
     return (
         <GraphiQL
             fetcher={fetcher}
-            query={tab.query}
-            variables={tab.variables}
-            headers={tab.headers}
+            initialQuery={tab.query}
+            initialVariables={tab.variables}
+            initialHeaders={tab.headers}
+            defaultHeaders={tab.headers}
             onEditQuery={handleQueryChange}
             onEditVariables={handleVariablesChange}
             onEditHeaders={handleHeadersChange}
-            plugins={[explorer]}
+            plugins={[explorer, HISTORY_PLUGIN]}
             storage={storage}
             shouldPersistHeaders={true}
-            defaultHeaders={tab.headers}
-        />
+            showPersistHeadersSettings={showInnerSettings}
+            forcedTheme={forcedTheme}
+        >
+            <HeaderSync />
+        </GraphiQL>
     )
 }

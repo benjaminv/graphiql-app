@@ -3,14 +3,14 @@
     align-items: center;
     gap: 12px;
     padding: 8px 16px;
-    background: #16213e;
-    border-bottom: 1px solid #2d2d44;
+    background: var(--app-bg-tertiary);
+    border-bottom: 1px solid var(--app-border);
     /* CRITICAL: no-drag to prevent stealing mouse events */
     -webkit-app-region: no-drag;
 }
 
 .endpoint-label {
-    color: #a0a0b0;
+    color: var(--app-text-secondary);
     font-size: 13px;
     font-weight: 500;
     white-space: nowrap;
@@ -19,10 +19,10 @@
 .endpoint-input {
     flex: 1;
     padding: 8px 12px;
-    background: #1a1a2e;
-    border: 1px solid #3d3d54;
+    background: var(--app-bg-secondary);
+    border: 1px solid var(--app-border-active);
     border-radius: 6px;
-    color: #e0e0e8;
+    color: var(--app-text-primary);
     font-size: 13px;
     font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
     outline: none;
@@ -35,14 +35,14 @@
 }
 
 .endpoint-input:focus {
-    border-color: #ff6b35;
-    box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.2);
+    border-color: var(--app-accent);
+    box-shadow: 0 0 0 2px var(--app-accent-alpha);
 }
 
 .endpoint-input::placeholder {
-    color: #5a5a6a;
+    color: var(--app-text-muted);
 }
 
 .endpoint-input::selection {
-    background: rgba(255, 107, 53, 0.4);
+    background: var(--app-selection);
 }

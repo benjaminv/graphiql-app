@@ -1,6 +1,7 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 
-// Expose any needed APIs to the renderer process here
 contextBridge.exposeInMainWorld('electronAPI', {
     platform: process.platform,
+    saveTabs: (data: string) => ipcRenderer.send('save-tabs', data),
+    loadTabs: (): string | null => ipcRenderer.sendSync('load-tabs'),
 })

@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from 'react'
-import { useTabStore } from '../store/tabStore'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { useTabStore, Tab } from '../store/tabStore'
+import { useConfirmDialog } from './ConfirmDialog'
 import './TabBar.css'
 
 interface ContextMenuState {
@@ -9,7 +10,23 @@ interface ContextMenuState {
     tabId: string | null
 }
 
-export function TabBar() {
+interface TabBarProps {
+    onOpenSettings: () => void
+}
+
+const DEFAULT_ENDPOINT = 'https://swapi-graphql.netlify.app/.netlify/functions/index'
+const DEFAULT_QUERY_START = '# Welcome to GraphiQL Desktop'
+
+function isTabEmpty(tab: Tab): boolean {
+    return (
+        tab.endpoint === DEFAULT_ENDPOINT &&
+        (tab.query.startsWith(DEFAULT_QUERY_START) || tab.query.trim() === '') &&
+        (tab.variables === '{}' || tab.variables.trim() === '') &&
+        tab.title === 'New Endpoint'
+    )
+}
+
+export function TabBar({ onOpenSettings }: TabBarProps) {
     const { tabs, activeTabId, addTab, removeTab, setActiveTab, updateTab, cloneTab, moveTab } = useTabStore()
     const [contextMenu, setContextMenu] = useState<ContextMenuState>({
         visible: false,
@@ -19,8 +36,11 @@ export function TabBar() {
     })
     const [editingTabId, setEditingTabId] = useState<string | null>(null)
     const [editValue, setEditValue] = useState('')
+    const [dragOverTabId, setDragOverTabId] = useState<string | null>(null)
+    const [draggingTabId, setDraggingTabId] = useState<string | null>(null)
     const menuRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
+    const { confirm, DialogComponent } = useConfirmDialog()
 
     // Close context menu when clicking outside
     useEffect(() => {
@@ -47,8 +67,18 @@ export function TabBar() {
         }
     }
 
-    const handleCloseTab = (e: React.MouseEvent, id: string) => {
+    const handleCloseTab = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation()
+        const tab = tabs.find((t) => t.id === id)
+        if (tab && !isTabEmpty(tab)) {
+            const confirmed = await confirm({
+                title: `Close "${tab.title}"?`,
+                message: 'All queries, headers, variables, and history in this endpoint tab will be permanently lost.',
+                confirmLabel: 'Close tab',
+                danger: true,
+            })
+            if (!confirmed) return
+        }
         removeTab(id)
     }
 
@@ -61,6 +91,13 @@ export function TabBar() {
             y: e.clientY,
             tabId
         })
+    }
+
+    // Double-click to rename
+    const handleDoubleClick = (e: React.MouseEvent, tabId: string) => {
+        e.preventDefault()
+        e.stopPropagation()
+        startEditing(tabId)
     }
 
     const startEditing = (tabId: string) => {
@@ -90,6 +127,43 @@ export function TabBar() {
         } else if (e.key === 'Escape') {
             cancelEditing()
         }
+    }
+
+    // Drag and drop handlers
+    const handleDragStart = (e: React.DragEvent, tabId: string) => {
+        setDraggingTabId(tabId)
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/plain', tabId)
+    }
+
+    const handleDragOver = (e: React.DragEvent, tabId: string) => {
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        if (tabId !== draggingTabId) {
+            setDragOverTabId(tabId)
+        }
+    }
+
+    const handleDragLeave = () => {
+        setDragOverTabId(null)
+    }
+
+    const handleDrop = (e: React.DragEvent, targetTabId: string) => {
+        e.preventDefault()
+        const sourceTabId = e.dataTransfer.getData('text/plain')
+        if (sourceTabId && sourceTabId !== targetTabId) {
+            const targetIndex = tabs.findIndex((t) => t.id === targetTabId)
+            if (targetIndex !== -1) {
+                moveTab(sourceTabId, targetIndex)
+            }
+        }
+        setDragOverTabId(null)
+        setDraggingTabId(null)
+    }
+
+    const handleDragEnd = () => {
+        setDragOverTabId(null)
+        setDraggingTabId(null)
     }
 
     const handleMenuAction = (action: string) => {
@@ -128,9 +202,16 @@ export function TabBar() {
                 {tabs.map((tab) => (
                     <div
                         key={tab.id}
-                        className={`tab ${tab.id === activeTabId ? 'active' : ''}`}
+                        className={`tab ${tab.id === activeTabId ? 'active' : ''} ${draggingTabId === tab.id ? 'dragging' : ''} ${dragOverTabId === tab.id ? 'drag-over' : ''}`}
                         onClick={() => handleTabClick(tab.id)}
                         onContextMenu={(e) => handleContextMenu(e, tab.id)}
+                        onDoubleClick={(e) => handleDoubleClick(e, tab.id)}
+                        draggable={editingTabId !== tab.id}
+                        onDragStart={(e) => handleDragStart(e, tab.id)}
+                        onDragOver={(e) => handleDragOver(e, tab.id)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, tab.id)}
+                        onDragEnd={handleDragEnd}
                     >
                         {editingTabId === tab.id ? (
                             <input
@@ -159,6 +240,16 @@ export function TabBar() {
                 </button>
             </div>
 
+            {/* Settings gear icon */}
+            <button
+                className="add-tab"
+                onClick={onOpenSettings}
+                aria-label="Open settings"
+                style={{ marginLeft: '4px', marginRight: '4px' }}
+            >
+                ⚙
+            </button>
+
             {/* Context Menu */}
             {contextMenu.visible && (
                 <div
@@ -183,6 +274,9 @@ export function TabBar() {
                     </button>
                 </div>
             )}
+
+            {/* Confirm Dialog */}
+            {DialogComponent}
         </div>
     )
 }

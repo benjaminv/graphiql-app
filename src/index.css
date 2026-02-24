@@ -12,18 +12,62 @@ body,
     overflow: hidden;
 }
 
+/* Theme tokens — dark is default */
+:root,
+[data-theme="dark"] {
+    --app-bg-primary: #0f0f1a;
+    --app-bg-secondary: #1a1a2e;
+    --app-bg-tertiary: #16213e;
+    --app-bg-surface: #2d2d44;
+    --app-bg-surface-hover: #3d3d54;
+    --app-border: #2d2d44;
+    --app-border-active: #3d3d54;
+    --app-text-primary: #e0e0e8;
+    --app-text-secondary: #a0a0b0;
+    --app-text-muted: #5a5a6a;
+    --app-accent: #ff6b35;
+    --app-accent-alpha: rgba(255, 107, 53, 0.2);
+    --app-accent-hover: rgba(255, 107, 53, 0.3);
+    --app-selection: rgba(255, 107, 53, 0.4);
+    --app-scrollbar-track: #1a1a2e;
+    --app-scrollbar-thumb: #3d3d54;
+    --app-scrollbar-thumb-hover: #4d4d64;
+    --app-shadow: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="light"] {
+    --app-bg-primary: #ffffff;
+    --app-bg-secondary: #f5f5f7;
+    --app-bg-tertiary: #eaeaef;
+    --app-bg-surface: #e0e0e5;
+    --app-bg-surface-hover: #d0d0d8;
+    --app-border: #d0d0d8;
+    --app-border-active: #b0b0b8;
+    --app-text-primary: #1a1a2e;
+    --app-text-secondary: #5a5a6a;
+    --app-text-muted: #9a9aa8;
+    --app-accent: #e05520;
+    --app-accent-alpha: rgba(224, 85, 32, 0.15);
+    --app-accent-hover: rgba(224, 85, 32, 0.2);
+    --app-selection: rgba(224, 85, 32, 0.3);
+    --app-scrollbar-track: #f0f0f2;
+    --app-scrollbar-thumb: #c0c0c8;
+    --app-scrollbar-thumb-hover: #a0a0a8;
+    --app-shadow: rgba(0, 0, 0, 0.12);
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
         Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    background: #0f0f1a;
-    color: #e0e0e8;
+    background: var(--app-bg-primary);
+    color: var(--app-text-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
 /* Prevent default selection color issues */
 ::selection {
-    background: rgba(255, 107, 53, 0.4);
+    background: var(--app-selection);
     color: inherit;
 }
 
@@ -34,14 +78,14 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-    background: #1a1a2e;
+    background: var(--app-scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #3d3d54;
+    background: var(--app-scrollbar-thumb);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #4d4d64;
+    background: var(--app-scrollbar-thumb-hover);
 }
