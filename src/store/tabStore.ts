@@ -1,6 +1,7 @@
 import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
+import { persist } from 'zustand/middleware'
 import { v4 as uuidv4 } from 'uuid'
+import { createFileStorage } from './fileStorage'
 
 export interface Tab {
     id: string
@@ -43,39 +44,6 @@ query {
 
 // Create the default tab once so the ID is stable during initialization
 const defaultTab = createDefaultTab()
-
-/**
- * File-backed storage adapter.
- * Chromium's localStorage in Electron does not reliably persist to disk.
- * We bypass it by reading/writing a JSON file via IPC to the main process,
- * with localStorage as an in-session cache for performance.
- */
-const fileBackedStorage = {
-    getItem(name: string): string | null {
-        // Try localStorage first (fast, works during the session)
-        const cached = localStorage.getItem(name)
-        if (cached) return cached
-
-        // Fall back to file on disk via synchronous IPC
-        const fromFile = window.electronAPI?.loadTabs()
-        if (fromFile) {
-            // Populate localStorage so subsequent reads are fast
-            localStorage.setItem(name, fromFile)
-            return fromFile
-        }
-
-        return null
-    },
-    setItem(name: string, value: string): void {
-        // Always write to localStorage (fast, for in-session reads)
-        localStorage.setItem(name, value)
-        // Also persist to file on disk (debounced in main process)
-        window.electronAPI?.saveTabs(value)
-    },
-    removeItem(name: string): void {
-        localStorage.removeItem(name)
-    },
-}
 
 export const useTabStore = create<TabStore>()(
     persist(
@@ -171,7 +139,7 @@ export const useTabStore = create<TabStore>()(
         }),
         {
             name: 'graphiql-desktop-tabs',
-            storage: createJSONStorage(() => fileBackedStorage),
+            storage: createFileStorage('graphiql-desktop-tabs'),
             // After rehydration: ensure activeTabId is valid
             onRehydrateStorage: () => {
                 return (state?: TabStore) => {

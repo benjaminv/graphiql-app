@@ -6,46 +6,66 @@ let mainWindow: BrowserWindow | null = null
 
 // --- File-based persistence (bypasses unreliable Chromium localStorage) ---
 const storageDir = app.getPath('userData')
-const tabsFilePath = path.join(storageDir, 'tabs-data.json')
 
-let pendingTabsData: string | null = null
-let saveTimer: ReturnType<typeof setTimeout> | null = null
+// Pending writes keyed by storage name, each debounced independently
+const pendingWrites: Record<string, string> = {}
+const saveTimers: Record<string, ReturnType<typeof setTimeout>> = {}
 
-function saveTabsNow() {
-    if (pendingTabsData !== null) {
+function getFilePath(name: string): string {
+    // Sanitize name to be filesystem-safe
+    const safeName = name.replace(/[^a-zA-Z0-9_-]/g, '_')
+    return path.join(storageDir, `${safeName}.json`)
+}
+
+function flushWrite(name: string) {
+    if (name in pendingWrites) {
         try {
-            fs.writeFileSync(tabsFilePath, pendingTabsData, 'utf-8')
+            fs.writeFileSync(getFilePath(name), pendingWrites[name], 'utf-8')
         } catch (e) {
-            console.error('Failed to save tabs to disk:', e)
+            console.error(`Failed to save "${name}" to disk:`, e)
         }
-        pendingTabsData = null
+        delete pendingWrites[name]
     }
-    if (saveTimer) {
-        clearTimeout(saveTimer)
-        saveTimer = null
+    if (saveTimers[name]) {
+        clearTimeout(saveTimers[name])
+        delete saveTimers[name]
     }
 }
 
-// Renderer sends tab data on every state change; we debounce the disk write
-ipcMain.on('save-tabs', (_event, data: string) => {
-    pendingTabsData = data
-    if (saveTimer) clearTimeout(saveTimer)
-    saveTimer = setTimeout(saveTabsNow, 1000)
+function flushAllWrites() {
+    for (const name of Object.keys(pendingWrites)) {
+        flushWrite(name)
+    }
+}
+
+// Renderer sends data on every state change; we debounce the disk write
+ipcMain.on('store-save', (_event, name: string, data: string) => {
+    pendingWrites[name] = data
+    if (saveTimers[name]) clearTimeout(saveTimers[name])
+    saveTimers[name] = setTimeout(() => flushWrite(name), 1000)
 })
 
 // Synchronous IPC: renderer blocks until we return the saved data
-ipcMain.on('load-tabs', (event) => {
+ipcMain.on('store-load', (event, name: string) => {
     try {
-        if (fs.existsSync(tabsFilePath)) {
-            event.returnValue = fs.readFileSync(tabsFilePath, 'utf-8')
+        const filePath = getFilePath(name)
+        if (fs.existsSync(filePath)) {
+            event.returnValue = fs.readFileSync(filePath, 'utf-8')
         } else {
             event.returnValue = null
         }
     } catch (e) {
-        console.error('Failed to load tabs from disk:', e)
+        console.error(`Failed to load "${name}" from disk:`, e)
         event.returnValue = null
     }
 })
+
+// --- One-time migration from v5.2.2 initial release ---
+const oldTabsFile = path.join(storageDir, 'tabs-data.json')
+const newTabsFile = getFilePath('graphiql-desktop-tabs')
+if (fs.existsSync(oldTabsFile) && !fs.existsSync(newTabsFile)) {
+    fs.renameSync(oldTabsFile, newTabsFile)
+}
 
 // --- Window management ---
 const createWindow = () => {
@@ -74,7 +94,7 @@ const createWindow = () => {
 
     // Flush any pending file writes before the window is destroyed
     mainWindow.on('close', () => {
-        saveTabsNow()
+        flushAllWrites()
         if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.session.flushStorageData()
         }
@@ -96,14 +116,14 @@ app.whenReady().then(() => {
 })
 
 app.on('before-quit', () => {
-    saveTabsNow()
+    flushAllWrites()
     if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.session.flushStorageData()
     }
 })
 
 app.on('will-quit', () => {
-    saveTabsNow()
+    flushAllWrites()
     session.defaultSession.flushStorageData()
 })
 

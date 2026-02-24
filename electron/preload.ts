@@ -2,6 +2,8 @@ import { contextBridge, ipcRenderer } from 'electron'
 
 contextBridge.exposeInMainWorld('electronAPI', {
     platform: process.platform,
-    saveTabs: (data: string) => ipcRenderer.send('save-tabs', data),
-    loadTabs: (): string | null => ipcRenderer.sendSync('load-tabs'),
+    store: {
+        save: (name: string, data: string) => ipcRenderer.send('store-save', name, data),
+        load: (name: string): string | null => ipcRenderer.sendSync('store-load', name),
+    },
 })

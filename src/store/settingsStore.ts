@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { createFileStorage } from './fileStorage'
 
 export type ThemeMode = 'system' | 'light' | 'dark'
 
@@ -47,6 +48,7 @@ export const useSettingsStore = create<SettingsStore>()(
         }),
         {
             name: 'graphiql-desktop-settings',
+            storage: createFileStorage('graphiql-desktop-settings'),
             onRehydrateStorage: () => {
                 // Called after rehydration — apply the persisted theme
                 return (state?: SettingsStore) => {

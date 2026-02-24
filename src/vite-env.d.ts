@@ -3,7 +3,9 @@
 interface Window {
     electronAPI: {
         platform: string
-        saveTabs: (data: string) => void
-        loadTabs: () => string | null
+        store: {
+            save: (name: string, data: string) => void
+            load: (name: string) => string | null
+        }
     }
 }
