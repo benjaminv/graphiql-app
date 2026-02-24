@@ -11,8 +11,11 @@ function createFileBackedStorage(name: string) {
         getItem(key: string): string | null {
             const cached = localStorage.getItem(key)
             if (cached) {
-                // Ensure localStorage data is also persisted to the file
-                window.electronAPI?.store.save(name, cached)
+                // One-time migration: persist localStorage data to file if file is empty
+                const existing = window.electronAPI?.store.load(name)
+                if (!existing) {
+                    window.electronAPI?.store.save(name, cached)
+                }
                 return cached
             }
 
