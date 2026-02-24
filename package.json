@@ -1,6 +1,6 @@
 {
   "name": "graphiql-desktop",
-  "version": "5.2.3",
+  "version": "5.3.0",
   "description": "A modern desktop wrapper for GraphiQL",
   "main": "dist-electron/main.js",
   "scripts": {

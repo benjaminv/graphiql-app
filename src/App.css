@@ -22,8 +22,6 @@
 .graphiql-container textarea,
 .graphiql-container button,
 .graphiql-container [contenteditable],
-.graphiql-container .CodeMirror,
-.graphiql-container .cm-editor,
 .graphiql-container .graphiql-editor,
 .graphiql-container .graphiql-explorer-root,
 .graphiql-container .monaco-editor {
@@ -33,8 +31,6 @@
 }
 
 /* Fix for editor selections */
-.graphiql-container .CodeMirror-selected,
-.graphiql-container .cm-selectionBackground,
 .graphiql-container .monaco-editor .selected-text {
     -webkit-app-region: no-drag;
 }

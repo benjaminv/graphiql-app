@@ -1,34 +1,43 @@
 .settings-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: hsla(219, 28%, 32%, 0.15);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 9000;
-    backdrop-filter: blur(2px);
+}
+
+[data-theme="dark"] .settings-overlay {
+    background: rgba(0, 0, 0, 0.4);
 }
 
 .settings-panel {
-    background: var(--app-bg-surface);
-    border: 1px solid var(--app-border-active);
+    background: var(--app-bg-primary);
     border-radius: 12px;
-    padding: 24px;
+    box-shadow: 0 6px 20px rgba(59, 76, 106, 0.13),
+                0 1.3px 4.5px rgba(59, 76, 106, 0.08);
     min-width: 380px;
     max-width: 480px;
-    box-shadow: 0 16px 48px var(--app-shadow);
+    overflow: auto;
+    max-height: 80vh;
+}
+
+[data-theme="dark"] .settings-panel {
+    box-shadow: none;
+    border: 1px solid var(--app-border-active);
 }
 
 .settings-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 20px;
+    padding: 24px;
 }
 
 .settings-title {
-    font-size: 18px;
-    font-weight: 600;
+    font-size: calc(22rem / 16);
+    font-weight: 500;
     color: var(--app-text-primary);
 }
 
@@ -53,21 +62,23 @@
 }
 
 .settings-section {
-    margin-bottom: 16px;
+    padding: 24px;
+    border-top: 1px solid var(--app-border);
 }
 
 .settings-label {
     display: block;
-    font-size: 14px;
-    font-weight: 600;
+    font-size: calc(18rem / 16);
+    font-weight: 500;
     color: var(--app-text-primary);
     margin-bottom: 4px;
 }
 
 .settings-description {
-    font-size: 13px;
+    font-size: calc(15rem / 16);
     color: var(--app-text-secondary);
     margin-bottom: 12px;
+    line-height: 1.5;
 }
 
 .settings-toggle-group {
@@ -84,7 +95,7 @@
     border: none;
     background: var(--app-bg-secondary);
     color: var(--app-text-secondary);
-    font-size: 13px;
+    font-size: calc(15rem / 16);
     font-weight: 500;
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
@@ -104,26 +115,20 @@
     color: white;
 }
 
-.settings-divider {
-    height: 1px;
-    background: var(--app-border-active);
-    margin: 16px 0;
-}
-
 .settings-danger-btn {
     padding: 8px 16px;
-    border: 1px solid #dc3545;
+    border: 1px solid hsl(13, 93%, 58%);
     border-radius: 6px;
     background: transparent;
-    color: #dc3545;
-    font-size: 13px;
+    color: hsl(13, 93%, 58%);
+    font-size: calc(15rem / 16);
     font-weight: 500;
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
 }
 
 .settings-danger-btn:hover {
-    background: #dc3545;
+    background: hsl(13, 93%, 58%);
     color: white;
 }
 

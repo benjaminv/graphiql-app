@@ -99,8 +99,6 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                         </div>
                     </div>
 
-                    <div className="settings-divider" />
-
                     <div className="settings-section">
                         <div className="settings-row">
                             <div>
@@ -117,8 +115,6 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                             </button>
                         </div>
                     </div>
-
-                    <div className="settings-divider" />
 
                     <div className="settings-section">
                         <label className="settings-label">Clear storage</label>

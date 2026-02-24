@@ -12,29 +12,8 @@ body,
     overflow: hidden;
 }
 
-/* Theme tokens — dark is default */
+/* Theme tokens — light is default */
 :root,
-[data-theme="dark"] {
-    --app-bg-primary: #0f0f1a;
-    --app-bg-secondary: #1a1a2e;
-    --app-bg-tertiary: #16213e;
-    --app-bg-surface: #2d2d44;
-    --app-bg-surface-hover: #3d3d54;
-    --app-border: #2d2d44;
-    --app-border-active: #3d3d54;
-    --app-text-primary: #e0e0e8;
-    --app-text-secondary: #a0a0b0;
-    --app-text-muted: #5a5a6a;
-    --app-accent: #ff6b35;
-    --app-accent-alpha: rgba(255, 107, 53, 0.2);
-    --app-accent-hover: rgba(255, 107, 53, 0.3);
-    --app-selection: rgba(255, 107, 53, 0.4);
-    --app-scrollbar-track: #1a1a2e;
-    --app-scrollbar-thumb: #3d3d54;
-    --app-scrollbar-thumb-hover: #4d4d64;
-    --app-shadow: rgba(0, 0, 0, 0.4);
-}
-
 [data-theme="light"] {
     --app-bg-primary: #ffffff;
     --app-bg-secondary: #f5f5f7;
@@ -54,6 +33,28 @@ body,
     --app-scrollbar-thumb: #c0c0c8;
     --app-scrollbar-thumb-hover: #a0a0a8;
     --app-shadow: rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="dark"] {
+    /* Aligned to GraphiQL's dark base: hsl(219, 29%, L%) */
+    --app-bg-primary: hsl(219, 29%, 18%);
+    --app-bg-secondary: hsl(219, 29%, 14%);
+    --app-bg-tertiary: hsl(219, 29%, 16%);
+    --app-bg-surface: hsl(219, 29%, 22%);
+    --app-bg-surface-hover: hsl(219, 29%, 28%);
+    --app-border: hsl(219, 29%, 24%);
+    --app-border-active: hsl(219, 29%, 30%);
+    --app-text-primary: hsl(219, 29%, 88%);
+    --app-text-secondary: hsl(219, 29%, 65%);
+    --app-text-muted: hsl(219, 29%, 40%);
+    --app-accent: #ff6b35;
+    --app-accent-alpha: rgba(255, 107, 53, 0.2);
+    --app-accent-hover: rgba(255, 107, 53, 0.3);
+    --app-selection: rgba(255, 107, 53, 0.4);
+    --app-scrollbar-track: hsl(219, 29%, 14%);
+    --app-scrollbar-thumb: hsl(219, 29%, 28%);
+    --app-scrollbar-thumb-hover: hsl(219, 29%, 35%);
+    --app-shadow: rgba(0, 0, 0, 0.5);
 }
 
 body {
