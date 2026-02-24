@@ -24,9 +24,9 @@ function applyTheme(theme: ThemeMode) {
         body.classList.add('graphiql-dark')
         document.documentElement.setAttribute('data-theme', 'dark')
     } else {
-        // System: let prefers-color-scheme handle GraphiQL
-        // Detect system preference for our wrapper UI
+        // System: resolve to light/dark based on OS preference
         const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        body.classList.add(isDark ? 'graphiql-dark' : 'graphiql-light')
         document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light')
     }
 }
@@ -34,7 +34,7 @@ function applyTheme(theme: ThemeMode) {
 export const useSettingsStore = create<SettingsStore>()(
     persist(
         (set) => ({
-            theme: 'system' as ThemeMode,
+            theme: 'light' as ThemeMode,
             showInnerSettings: false,
 
             setTheme: (theme: ThemeMode) => {

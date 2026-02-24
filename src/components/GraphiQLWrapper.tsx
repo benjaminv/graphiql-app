@@ -6,6 +6,7 @@ import { explorerPlugin } from '@graphiql/plugin-explorer'
 import { useGraphiQL, useGraphiQLActions } from '@graphiql/react'
 import { useTabStore, Tab } from '../store/tabStore'
 import { useSettingsStore } from '../store/settingsStore'
+import { registerFlush, unregisterFlush } from '../store/flushRegistry'
 import 'graphiql/style.css'
 import '@graphiql/plugin-explorer/style.css'
 
@@ -100,10 +101,13 @@ export function GraphiQLWrapper({ tab }: GraphiQLWrapperProps) {
     // Create isolated storage for this tab
     const storage = useMemo(() => createTabStorage(tab.id), [tab.id])
 
-    // Map our theme setting to GraphiQL's forcedTheme
-    const forcedTheme = theme === 'system' ? undefined : theme
+    // Always resolve to an explicit theme — never let GraphiQL guess
+    const forcedTheme = theme === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : theme
 
-    // Create a stable fetcher that uses the current tab's endpoint and headers
+    // Fetcher uses initial endpoint/headers — v5 passes current editor
+    // headers at execution time, so the fetcher only needs the endpoint.
     const fetcher = useMemo(() => {
         let headers: Record<string, string> = {}
         try {
@@ -118,32 +122,49 @@ export function GraphiQLWrapper({ tab }: GraphiQLWrapperProps) {
         })
     }, [tab.endpoint, tab.headers])
 
-    const handleQueryChange = useCallback(
-        (query: string | undefined) => {
-            if (query !== undefined) {
-                updateTab(tab.id, { query })
-            }
-        },
-        [tab.id, updateTab]
-    )
+    // Deferred sync: accumulate all edits in a ref, flush to Zustand store
+    // ONLY on unmount (tab switch / close) or when explicitly requested via
+    // the flush registry (clone/close in TabBar). Never on a timer — any
+    // store update re-renders <GraphiQL> and blanks the explorer plugin.
+    const pendingEdits = useRef<Partial<Omit<Tab, 'id'>>>({})
+    const tabIdRef = useRef(tab.id)
+    const updateTabRef = useRef(updateTab)
+    updateTabRef.current = updateTab
 
-    const handleVariablesChange = useCallback(
-        (variables: string | undefined) => {
-            if (variables !== undefined) {
-                updateTab(tab.id, { variables })
-            }
-        },
-        [tab.id, updateTab]
-    )
+    const flushEdits = useCallback(() => {
+        const edits = pendingEdits.current
+        if (Object.keys(edits).length > 0) {
+            updateTabRef.current(tabIdRef.current, edits)
+            pendingEdits.current = {}
+        }
+    }, [])
 
-    const handleHeadersChange = useCallback(
-        (headers: string | undefined) => {
-            if (headers !== undefined) {
-                updateTab(tab.id, { headers })
-            }
-        },
-        [tab.id, updateTab]
-    )
+    useEffect(() => {
+        tabIdRef.current = tab.id
+        registerFlush(tab.id, flushEdits)
+        return () => {
+            unregisterFlush(tab.id)
+            flushEdits()
+        }
+    }, [tab.id, flushEdits])
+
+    const handleQueryChange = useCallback((query: string | undefined) => {
+        if (query !== undefined) {
+            pendingEdits.current.query = query
+        }
+    }, [])
+
+    const handleVariablesChange = useCallback((variables: string | undefined) => {
+        if (variables !== undefined) {
+            pendingEdits.current.variables = variables
+        }
+    }, [])
+
+    const handleHeadersChange = useCallback((headers: string | undefined) => {
+        if (headers !== undefined) {
+            pendingEdits.current.headers = headers
+        }
+    }, [])
 
     // Create the explorer plugin - memoized to prevent flashing
     const explorer = useMemo(() => explorerPlugin(), [])

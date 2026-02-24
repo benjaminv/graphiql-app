@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useTabStore, Tab } from '../store/tabStore'
 import { useConfirmDialog } from './ConfirmDialog'
+import { flushTab } from '../store/flushRegistry'
 import './TabBar.css'
 
 interface ContextMenuState {
@@ -69,6 +70,7 @@ export function TabBar({ onOpenSettings }: TabBarProps) {
 
     const handleCloseTab = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation()
+        flushTab(id)
         const tab = tabs.find((t) => t.id === id)
         if (tab && !isTabEmpty(tab)) {
             const confirmed = await confirm({
@@ -177,6 +179,7 @@ export function TabBar({ onOpenSettings }: TabBarProps) {
                 startEditing(tabId)
                 break
             case 'clone':
+                flushTab(tabId)
                 cloneTab(tabId)
                 break
             case 'moveLeft':
